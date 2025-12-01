@@ -52,7 +52,5 @@ export const deletePortfolio = async (id: number) => {
             "Authorization": `Basic ${btoa('user:password')}`,
             "Content-Type": "application/json",
         }
-    }).then(async (response) => {
-        return await response.json();
     });
 }

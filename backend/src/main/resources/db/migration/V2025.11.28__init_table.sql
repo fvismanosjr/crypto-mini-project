@@ -1,0 +1,14 @@
+DROP TABLE IF EXISTS portfolios CASCADE;
+DROP TABLE IF EXISTS holdings CASCADE;
+
+CREATE TABLE portfolios (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE holdings (
+    id BIGSERIAL PRIMARY KEY,
+    portfolio_id BIGINT NOT NULL REFERENCES portfolios (id) ON DELETE CASCADE,
+    asset VARCHAR(100) NOT NULL,
+    amount DECIMAL(60, 30) NOT NULL
+);

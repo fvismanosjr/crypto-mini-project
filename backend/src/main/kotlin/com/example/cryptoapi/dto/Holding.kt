@@ -24,4 +24,5 @@ data class HoldingResponse(
     val id: Long,
     val asset: String,
     val amount: BigDecimal,
+    val portfolio: PortfolioResponse
 )

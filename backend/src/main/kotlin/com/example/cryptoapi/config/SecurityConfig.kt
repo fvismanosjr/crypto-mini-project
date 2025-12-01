@@ -30,8 +30,8 @@ class SecurityConfig(
                     .requestMatchers(
                         "/auth/register",
                         "/assets",
-                        "/portfolios",
-                        "/holdings"
+                        "/portfolios/**",
+                        "/holdings/**"
                     )
                     .permitAll()
                     .anyRequest()

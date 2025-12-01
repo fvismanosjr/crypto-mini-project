@@ -14,6 +14,11 @@ class HoldingService(
 ) {
     fun findAll() = holdingRepository.findAll().map { it.toResponse() }
 
+    fun findById(id: Long): HoldingResponse = holdingRepository
+                                                .findById(id)
+                                                .map { it.toResponse() }
+                                                .orElseThrow { Exception("no holding found") }
+
     fun save(
         request: HoldingRequest
     ): HoldingResponse {

@@ -25,10 +25,11 @@ import { Plus } from "lucide-vue-next"
 
 import { getAssets } from '@/services/asset';
 import { ref, watch } from 'vue';
-import { saveHolding } from '@/services/holding'
+import { findHolding, saveHolding } from '@/services/holding'
 import { getPortfolios } from '@/services/portfolio'
 
 const props = defineProps<{
+    id?: number,
     isOpen: boolean
 }>()
 
@@ -68,6 +69,12 @@ if (props.isOpen) {
     getPortfolios().then((response) => {
         portfolios.value = response;
     })
+
+    if (props.id) {
+        findHolding(props.id).then((result) => {
+            holdingForm.value = result;
+        })
+    }
 }
 
 const calculateStock = () => {
@@ -92,7 +99,7 @@ const submit = () => {
 <template>
     <Dialog :open="isOpen" @update:open="(val) => emit('update:open', val)">
         <DialogTrigger>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="icon-sm">
                 <Plus />
             </Button>
         </DialogTrigger>

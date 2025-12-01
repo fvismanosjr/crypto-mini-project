@@ -34,7 +34,8 @@ class Holding(
         return HoldingResponse(
             this.id,
             this.asset,
-            this.amount
+            this.amount,
+            this.portfolio.toResponse()
         )
     }
 }

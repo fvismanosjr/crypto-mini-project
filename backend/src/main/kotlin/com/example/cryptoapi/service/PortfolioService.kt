@@ -15,7 +15,7 @@ class PortfolioService(
     private val portfolioRepository: PortfolioRepository,
     private val holdingRepository: HoldingRepository
 ) {
-    fun find(id: Long) = portfolioRepository
+    fun find(id: Long): Portfolio = portfolioRepository
                             .findById(id)
                             .orElseThrow { Exception("no portfolio found") }
 

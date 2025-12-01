@@ -1,6 +1,7 @@
 package com.example.cryptoapi.entity
 
 import com.example.cryptoapi.dto.PortfolioResponse
+import com.example.cryptoapi.dto.PortfolioResponseWithHolding
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
@@ -28,6 +29,16 @@ class Portfolio(
         return PortfolioResponse(
             this.id,
             this.name
+        )
+    }
+
+    fun toResponseWithHoldings(): PortfolioResponseWithHolding {
+        return PortfolioResponseWithHolding(
+            this.id,
+            this.name,
+            this.holdings.map {
+                it.toResponse()
+            }
         )
     }
 }

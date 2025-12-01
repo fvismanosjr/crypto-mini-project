@@ -31,16 +31,26 @@ import {
 
 import {
     BriefcaseBusiness,
+    X,
+    // Pencil,
+    BanknoteArrowDown,
+    BanknoteArrowUp,
+    Pencil
 } from "lucide-vue-next"
+
+import { Button } from '@/components/ui/button'
 
 import AppSidebar from "@/components/AppSidebar.vue"
 import AssetTable from "@/components/AssetTable.vue";
 import PortfolioDialog from '@/components/PortfolioDialog.vue'
 import HoldingDialog from '@/components/HoldingDialog.vue'
 import { ref } from 'vue'
-import { getPortfolios } from '@/services/portfolio'
+import { getPortfoliosWithHoldings } from '@/services/portfolio'
 import { getHoldings } from '@/services/holding'
+import { getAssets } from '@/services/asset'
+import { formatNumberToHuman } from '@/helpers/Number'
 
+const portfolioCardContentKey = ref(0);
 const holdingDialogKey = ref(0);
 const isHoldingDialogOpen = ref(false);
 
@@ -50,6 +60,7 @@ const isPortfolioDialogOpen = ref(false);
 interface Portfolio {
     id: number,
     name: string,
+    holdings: [],
 }
 
 interface Holding {
@@ -58,9 +69,19 @@ interface Holding {
     amount: string,
 }
 
+interface Asset {
+    id: string,
+    priceUsd: number,
+}
+
+const assets = ref();
+const holdingId = ref(0);
+const portfolioId = ref(0);
+const portfolioType = ref("");
 const portfolios = ref<Portfolio[]>([<Portfolio>{
     id: 0,
-    name: ""
+    name: "",
+    holdings: [],
 }]);
 
 const holdings = ref<Holding[]>([<Holding>{
@@ -79,7 +100,11 @@ const updatePortfolioDialog = (val: boolean) => {
     portfolioDialogKey.value++;
 }
 
-getPortfolios().then((response) => {
+getAssets().then((response) => {
+    assets.value = response;
+})
+
+getPortfoliosWithHoldings().then((response) => {
     portfolios.value = response;
 })
 
@@ -87,25 +112,60 @@ getHoldings().then((response) => {
     holdings.value = response;
 })
 
-const refresh = () => {
-    getPortfolios().then((response) => {
-        portfolios.value = response;
-    })
-
-    getHoldings().then((response) => {
-        holdings.value = response;
-    })
-}
-
 const calculateTotal = () => {
-    const total = 0;
+    let total = 0;
 
     holdings.value.forEach((holding) => {
-        // assets
+        if (holding.asset) {
+            const find = assets.value.find((asset: Asset) => {
+                return asset.id == holding.asset
+            });
+
+            total += parseInt(holding.amount) * find.priceUsd
+        }
     });
 
-    return total;
+
+    return formatNumberToHuman(total);
 }
+
+const calculateTotalPerPortfolio = (holdings: []) => {
+    let total = 0;
+
+    if (holdings) {
+        holdings.forEach((holding: Holding) => {
+            const find = assets.value.find((asset: Asset) => {
+                return asset.id == holding.asset
+            });
+
+            total += parseInt(holding.amount) * find.priceUsd;
+        })
+    }
+
+    return formatNumberToHuman(total);
+}
+
+const refresh = async () => {
+    portfolios.value = [];
+
+    setTimeout(async () => {
+        await getPortfoliosWithHoldings().then((response) => {
+            portfolios.value = response;
+        })
+
+        await getHoldings().then((response) => {
+            holdings.value = response;
+        })
+    }, 500);
+}
+
+const openPortfolioDialog = (id: number, type: string) => {
+    portfolioId.value = id;
+    portfolioType.value = type;
+    isPortfolioDialogOpen.value = true;
+    portfolioDialogKey.value++;
+}
+
 </script>
 
 <template>
@@ -133,7 +193,9 @@ const calculateTotal = () => {
                                 </ItemContent>
                                 <ItemActions>
                                     <PortfolioDialog
+                                        :id="portfolioId"
                                         :is-open="isPortfolioDialogOpen"
+                                        :type="portfolioType"
                                         :key="`holding-diloag-${portfolioDialogKey}`"
                                         @reload-table="refresh"
                                         @update:open="updatePortfolioDialog"
@@ -147,6 +209,7 @@ const calculateTotal = () => {
                                 </ItemContent>
                                 <ItemActions>
                                     <HoldingDialog
+                                        :id="holdingId"
                                         :is-open="isHoldingDialogOpen"
                                         :key="`holding-diloag-${holdingDialogKey}`"
                                         @reload-table="refresh"
@@ -167,14 +230,25 @@ const calculateTotal = () => {
                             <CardTitle>Overview</CardTitle>
                             <CardDescription>of your portfolio</CardDescription>
                         </CardHeader>
-                        <CardContent class="flex flex-col gap-3 max-h-[315px] overflow-y-auto">
+                        <CardContent
+                            class="flex flex-col gap-3 max-h-[315px] overflow-y-auto"
+                            :key="`card-content-${portfolioCardContentKey}`"
+                        >
                             <template v-if="portfolios.length">
                                 <template v-for="portfolio in portfolios" :key="portfolio.id">
                                     <Item variant="outline">
                                         <ItemContent>
                                             <ItemTitle>{{ portfolio.name }}</ItemTitle>
-                                            <ItemDescription>$1000.00</ItemDescription>
+                                            <ItemDescription>${{ calculateTotalPerPortfolio(portfolio.holdings) }}</ItemDescription>
                                         </ItemContent>
+                                        <ItemActions>
+                                            <Button variant="secondary" size="icon-sm" @click.prevent="openPortfolioDialog(portfolio.id, 'edit')">
+                                                <Pencil />
+                                            </Button>
+                                            <Button variant="secondary" size="icon-sm" @click.prevent="openPortfolioDialog(portfolio.id, 'delete')">
+                                                <X />
+                                            </Button>
+                                        </ItemActions>
                                     </Item>
                                 </template>
                             </template>
@@ -187,7 +261,6 @@ const calculateTotal = () => {
                                 <EmptyTitle>No portfolio found</EmptyTitle>
                                 <EmptyDescription>Add new portfolio to see the overview</EmptyDescription>
                             </Empty>
-
                         </CardContent>
                     </Card>
                     <Card>
@@ -203,6 +276,14 @@ const calculateTotal = () => {
                                             <ItemTitle>{{ holding.asset }}</ItemTitle>
                                             <ItemDescription>{{ holding.amount }}</ItemDescription>
                                         </ItemContent>
+                                        <ItemActions>
+                                            <Button variant="secondary" size="icon-sm">
+                                                <BanknoteArrowUp />
+                                            </Button>
+                                            <Button variant="secondary" size="icon-sm">
+                                                <BanknoteArrowDown />
+                                            </Button>
+                                        </ItemActions>
                                     </Item>
                                 </template>
                             </template>

@@ -6,6 +6,12 @@ export const getHoldings = async () => {
     })
 }
 
+export const findHolding = async (id: number) => {
+    return await fetch(`${HOLDING_API_URL}/${id}`).then(async (response) => {
+        return await response.json();
+    })
+}
+
 export const saveHolding = async (holding: object) => {
     return await fetch(HOLDING_API_URL, {
         method: "POST",
@@ -14,7 +20,6 @@ export const saveHolding = async (holding: object) => {
         },
         body: JSON.stringify(holding),
     }).then(async (response) => {
-        console.log(response);
-        // return await response.json();
+        return await response.json();
     });
 }
